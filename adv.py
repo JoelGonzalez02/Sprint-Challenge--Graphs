@@ -1,6 +1,7 @@
 from room import Room
 from player import Player
 from world import World
+from collections import deque
 
 import random
 from ast import literal_eval
@@ -29,6 +30,68 @@ player = Player(world.starting_room)
 # traversal_path = ['n', 'n']
 traversal_path = []
 
+graph = {}
+opposite_direction = {'n': 's', 'e': 'w', 's': 'n', 'w': 'e'}
+
+current_room = player.current_room.id
+
+exits = player.current_room.get_exits()
+
+#add key(current_room) and values(exits) to the graph dictionary
+graph[current_room] = {e: '?' for e in exits}
+
+# x = graph[current_room].items()
+# print(x)
+
+# depth first traversal until a dead end is reached
+# while there is an unknown value in the graphs values
+while '?' in graph[current_room].values():
+    # move in a random direction(the key of the current room(n, s, e, w)) if the value of that direction is ?
+    d = random.choice([k for k, v in graph[current_room].items() if v == '?'])
+
+    prev_room = current_room
+    player.travel(d)
+    traversal_path.append(d)
+    current_room = player.current_room.id
+
+    if current_room not in graph:
+        graph[current_room] = {e: '?' for e in player.current_room.get_exits()}
+
+    graph[prev_room][d] = current_room
+    graph[current_room][opposite_direction[d]] = prev_room
+
+    if '?' not in graph[current_room].values():
+
+        if len(graph) == 500:
+            break
+    
+    #bfs
+
+    queue = deque()
+    visited = set()
+
+    queue.append([current_room])
+
+    while len(queue) > 0:
+        curr_path = queue.popleft()
+        curr_room = curr_path[-1]
+
+        if '?' in graph[curr_room].values():
+            break
+
+        if curr_room not in visited:
+            visited.add(curr_room)
+
+            for e in graph[curr_room]:
+                new_path = list(curr_path)
+                new_path.append(graph[curr_room][e])
+                queue.append(new_path)
+
+    for i in range(1, len(curr_path)):
+        d = [k for k, v in graph[current_room].items() if v == curr_path[i]][0]
+        player.travel(d)
+        traversal_path.append(d)
+        current_room = player.current_room.id
 
 
 # TRAVERSAL TEST - DO NOT MODIFY
